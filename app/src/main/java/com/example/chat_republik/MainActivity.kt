@@ -1,6 +1,7 @@
 package com.example.chat_republik
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,7 +44,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +62,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.chat_republik.ui.theme.ChatrepublikTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
@@ -71,9 +78,28 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Chat() {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp // Lebar layar dalam DP
-    var message by remember { mutableStateOf("") }
-    var isSender by remember { mutableStateOf(true) }
+    var inputMessage by remember { mutableStateOf("") }
+    val messages = remember { mutableStateListOf<Triple<Boolean, String, String>>() } // Boolean for sender/receiver, String for message, String for time
+//    Contoh struktur data:
+//    [
+//        Triple(true, "Halo aku A", "10:00 AM"),
+//        Triple(false, "Halo aku B", "10:20 AM"),
+//        Triple(true, "Halo aku A lagi", "12:00 AM"),
+//    ]
+    val currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm"))
+    var isMessageReceived by remember { mutableStateOf(false) }
+
+
+    //    Load chat history dari server atau database
+    LaunchedEffect(Unit) {
+
+    }
+
+//        jika ada pesan masuk
+    if (isMessageReceived) {
+        messages.add(Triple(false, "Halo aku B", currentTime))
+        isMessageReceived = false
+    }
 
     Column(
         modifier = Modifier
@@ -132,86 +158,33 @@ fun Chat() {
                 .fillMaxWidth()
                 .weight(1f)
         ){
+
             //        ISI CHAT
-            Column(
-                Modifier
+            LazyColumn(
+                modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
             ){
-//                lawan bicara
-                Row(
-                    modifier = Modifier.height(IntrinsicSize.Max)
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 0.dp, bottomEnd = 20.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .widthIn(max = screenWidth*0.65f)
-                            .padding(horizontal = 15.dp, vertical = 15.dp)
-                    ) {
-                        Text(
-                            "Halo aku fdsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA",
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                items(messages) { (isSender, text, time) ->
+                    if (isSender) {
+                        SenderMessage(text = text, time = time)
+                    } else {
+                        ReceiverMessage(text = text, time = time)
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "13:00",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-//                pengirim
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier
-                        .height(IntrinsicSize.Max)
-                        .fillMaxWidth()
-                ){
-                    Row(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = "13:00",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 0.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .widthIn(max = screenWidth*0.65f)
-                            .padding(horizontal = 15.dp, vertical = 15.dp)
-                    ) {
-                        Text("Halo A, aku B!" +
-                                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas pretium libero ac dui fermentum tristique. Interdum et malesuada fames ac ante ipsum primis in faucibus. Sed sit amet quam nisl. Curabitur lobortis id purus efficitur commodo. Aliquam erat volutpat. In fermentum commodo neque. Nulla ultrices, velit tincidunt suscipit efficitur, enim urna aliquet elit, id finibus lectus tortor at nibh. Praesent dignissim ultrices dolor, quis dapibus dolor dapibus eget. Praesent nec pulvinar eros. Phasellus vel dictum neque.",
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
 
 //           CHAT INPUT FIELD
             ChatInputField(
-                message = message,
-                onMessageChange = { message = it },
+                inputMessage = inputMessage,
+                onMessageChange = { inputMessage = it },
                 onSendMessage = {
+//                    pengecekan input tidak kosong ataupun ada hal lain yang perlu dicek sebelum mengirim pesan
+                    if (inputMessage.isNotEmpty()){
+                        messages.add(Triple(true, inputMessage, currentTime))
+                    }
                     // Tangani pengiriman pesan di sini
-                    println("Pesan dikirim: $message")
-                    message = "" // Bersihkan input setelah pengiriman
+                    inputMessage = "" // Bersihkan input setelah pengiriman
                 }
             )
         }
@@ -219,8 +192,83 @@ fun Chat() {
 }
 
 @Composable
+fun SenderMessage(
+    text: String = "",
+    time: String = ""
+){
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp // Lebar layar dalam DP
+    Row(
+        horizontalArrangement = Arrangement.End,
+        modifier = Modifier
+            .height(IntrinsicSize.Max)
+            .fillMaxWidth()
+    ){
+        Row(
+            modifier = Modifier.fillMaxHeight(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = time,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 12.sp
+            )
+        }
+        Spacer(modifier = Modifier.width(5.dp))
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 0.dp))
+                .background(MaterialTheme.colorScheme.primary)
+                .widthIn(max = screenWidth*0.65f)
+                .padding(horizontal = 15.dp, vertical = 15.dp)
+        ) {
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+    }
+}
+
+@Composable
+fun ReceiverMessage(
+    text: String = "",
+    time: String = ""
+){
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp // Lebar layar dalam DP
+    Row(
+        modifier = Modifier.height(IntrinsicSize.Max)
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 0.dp, bottomEnd = 20.dp))
+                .background(MaterialTheme.colorScheme.primary)
+                .widthIn(max = screenWidth*0.65f)
+                .padding(horizontal = 15.dp, vertical = 15.dp)
+        ) {
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+        Spacer(modifier = Modifier.width(5.dp))
+        Row(
+            modifier = Modifier.fillMaxHeight(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = time,
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
 fun ChatInputField(
-    message: String,
+    inputMessage: String,
     onMessageChange: (String) -> Unit,
     onSendMessage: () -> Unit
 ) {
@@ -232,7 +280,7 @@ fun ChatInputField(
     ) {
         // Input TextField untuk chat
         BasicTextField(
-            value = message,
+            value = inputMessage,
             onValueChange = onMessageChange,
             textStyle = TextStyle(
                 color = MaterialTheme.colorScheme.onPrimary, // Warna teks
@@ -254,7 +302,7 @@ fun ChatInputField(
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (message.isEmpty()) {
+                    if (inputMessage.isEmpty()) {
                         // Placeholder jika pesan kosong
                         Text(
                             text = "Type a message...",
