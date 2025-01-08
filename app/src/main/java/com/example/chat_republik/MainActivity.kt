@@ -76,10 +76,31 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+
 @Composable
 fun Chat() {
     var inputMessage by remember { mutableStateOf("") }
-    val messages = remember { mutableStateListOf<Triple<Boolean, String, String>>() } // Boolean for sender/receiver, String for message, String for time
+    var messageReceived = "Budi 24-jan-2025 10:00 halo aku B"
+    val messages = remember { mutableStateListOf<Triple<Boolean, String, String>>(
+        Triple(true, "Halo aku A", "10:00 AM"),
+        Triple(false, "Halo aku B", "10:20 AM"),
+        Triple(true, "Halo aku A lagi", "12:00 AM"),
+        Triple(false, "Ini pesan dari B lagi", "12:05 AM"),
+        Triple(true, "Apa kabar A?", "12:10 AM"),
+        Triple(false, "Baik, terima kasih B!", "12:15 AM"),
+        Triple(true, "Ada rencana akhir pekan?", "12:30 AM"),
+        Triple(false, "Mungkin nonton film, B.", "12:35 AM"),
+        Triple(true, "Film apa yang ingin ditonton?", "12:40 AM"),
+        Triple(false, "Mungkin yang baru, yang ada di bioskop.", "12:45 AM"),
+        Triple(true, "Setuju! Aku sudah lama tidak nonton.", "12:50 AM"),
+        Triple(false, "Kita atur waktu nanti.", "12:55 AM"),
+        Triple(true, "Oke, nanti aku kabarin.", "01:00 AM"),
+        Triple(false, "Baik, aku tunggu kabar dari A.", "01:05 AM"),
+        Triple(true, "Sampai jumpa nanti ya!", "01:10 AM"),
+        Triple(false, "Sampai jumpa A!", "01:15 AM")
+        )
+    } // Boolean for sender/receiver, String for message, String for time
 //    Contoh struktur data:
 //    [
 //        Triple(true, "Halo aku A", "10:00 AM"),
@@ -89,6 +110,12 @@ fun Chat() {
     val currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm"))
     var isMessageReceived by remember { mutableStateOf(false) }
 
+
+    if(isMessageReceived){
+        messages.add(Triple(false, "halo", currentTime))
+        isMessageReceived = false
+    }
+//    SEBAGAI CONTOH, DATABASE MENGGUNAKAN FIRESTORE
 
     //    Load chat history dari server atau database
     LaunchedEffect(Unit) {
