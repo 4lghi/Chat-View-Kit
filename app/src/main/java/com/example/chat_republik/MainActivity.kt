@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import com.example.chat_republik.ui.theme.ChatrepublikTheme
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
@@ -77,45 +78,99 @@ class MainActivity : ComponentActivity() {
 }
 
 
+data class ChatMessage(
+    val isSender: Boolean,
+    val username: String,
+    val text: String,
+    val time: String
+)
+
 
 @Composable
 fun Chat() {
     var inputMessage by remember { mutableStateOf("") }
-    var messageReceived = "Budi 24-jan-2025 10:00 halo aku B"
-    val messages = remember { mutableStateListOf<Triple<Boolean, String, String>>(
-        Triple(true, "Halo aku A", "10:00 AM"),
-        Triple(false, "Halo aku B", "10:20 AM"),
-        Triple(true, "Halo aku A lagi", "12:00 AM"),
-        Triple(false, "Ini pesan dari B lagi", "12:05 AM"),
-        Triple(true, "Apa kabar A?", "12:10 AM"),
-        Triple(false, "Baik, terima kasih B!", "12:15 AM"),
-        Triple(true, "Ada rencana akhir pekan?", "12:30 AM"),
-        Triple(false, "Mungkin nonton film, B.", "12:35 AM"),
-        Triple(true, "Film apa yang ingin ditonton?", "12:40 AM"),
-        Triple(false, "Mungkin yang baru, yang ada di bioskop.", "12:45 AM"),
-        Triple(true, "Setuju! Aku sudah lama tidak nonton.", "12:50 AM"),
-        Triple(false, "Kita atur waktu nanti.", "12:55 AM"),
-        Triple(true, "Oke, nanti aku kabarin.", "01:00 AM"),
-        Triple(false, "Baik, aku tunggu kabar dari A.", "01:05 AM"),
-        Triple(true, "Sampai jumpa nanti ya!", "01:10 AM"),
-        Triple(false, "Sampai jumpa A!", "01:15 AM")
+//    val messages = remember {mutableStateListOf<ChatMessage>()}
+    val messages = remember {
+        mutableStateListOf(
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "Hi, how are you?",
+                time = "24-01-2025 10:00"
+            ),
+            ChatMessage(
+                isSender = false,
+                username = "Alice",
+                text = "I'm good, thanks! How about you?",
+                time = "24-01-2025 10:01"
+            ),
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "I'm doing well. What's up?",
+                time = "24-01-2025 10:02"
+            ),
+            ChatMessage(
+                isSender = false,
+                username = "Alice",
+                text = "Just checking in. Are we still on for the meeting later?",
+                time = "24-01-2025 10:05"
+            ),
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "Yes, let's meet at 2 PM.",
+                time = "24-01-2025 10:06"
+            ),
+            ChatMessage(
+                isSender = false,
+                username = "Bob",
+                text = "Hey, can you send me the report?",
+                time = "25-01-2025 09:30"
+            ),
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "Sure, give me a minute.",
+                time = "25-01-2025 09:32"
+            ),
+            ChatMessage(
+                isSender = false,
+                username = "Bob",
+                text = "Thanks! Appreciate it.",
+                time = "25-01-2025 09:35"
+            ),
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "No problem!",
+                time = "25-01-2025 09:37"
+            ),
+            ChatMessage(
+                isSender = false,
+                username = "Alice",
+                text = "How's everything going on your side?",
+                time = "26-01-2025 11:00"
+            ),
+            ChatMessage(
+                isSender = true,
+                username = "You",
+                text = "Everything's good. Just been busy with work.",
+                time = "26-01-2025 11:05"
+            )
         )
-    } // Boolean for sender/receiver, String for message, String for time
-//    Contoh struktur data:
-//    [
-//        Triple(true, "Halo aku A", "10:00 AM"),
-//        Triple(false, "Halo aku B", "10:20 AM"),
-//        Triple(true, "Halo aku A lagi", "12:00 AM"),
-//    ]
-    val currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("hh:mm"))
+    }
+
+
+
+    val currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
     var isMessageReceived by remember { mutableStateOf(false) }
 
+//    username user
+    val username = "user"
+//    username sender
+    val senderUsername = "user"
 
-    if(isMessageReceived){
-        messages.add(Triple(false, "halo", currentTime))
-        isMessageReceived = false
-    }
-//    SEBAGAI CONTOH, DATABASE MENGGUNAKAN FIRESTORE
 
     //    Load chat history dari server atau database
     LaunchedEffect(Unit) {
@@ -124,7 +179,7 @@ fun Chat() {
 
 //        jika ada pesan masuk
     if (isMessageReceived) {
-        messages.add(Triple(false, "Halo aku B", currentTime))
+        messages.add(ChatMessage(false, senderUsername, "Halooo", currentTime))
         isMessageReceived = false
     }
 
@@ -157,7 +212,7 @@ fun Chat() {
             }
             Spacer(modifier = Modifier.width(15.dp))
             Text(
-                text = "User",
+                text = username,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
@@ -185,21 +240,31 @@ fun Chat() {
                 .fillMaxWidth()
                 .weight(1f)
         ){
-
-            //        ISI CHAT
+//        ISI CHAT
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-            ){
-                items(messages) { (isSender, text, time) ->
-                    if (isSender) {
-                        SenderMessage(text = text, time = time)
+                modifier = Modifier.weight(1f)
+            ) {
+                items(messages) { message ->
+                    val timeFormatted = try {
+                        // Mencoba untuk memparsing waktu
+                        LocalDateTime.parse(message.time, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
+                            .format(DateTimeFormatter.ofPattern("HH:mm"))
+                    } catch (e: DateTimeParseException) {
+                        // Tangani kesalahan parsing jika terjadi dan beri nilai default
+                        Log.e("ChatApp", "Parsing error for time: ${e.message}")
+                        ""
+                    }
+
+                    // Tampilkan pesan sesuai dengan siapa yang mengirim
+                    if (message.isSender) {
+                        SenderMessage(text = message.text, time = timeFormatted)
                     } else {
-                        ReceiverMessage(text = text, time = time)
+                        ReceiverMessage(text = message.text, time = timeFormatted)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
+
 
 //           CHAT INPUT FIELD
             ChatInputField(
@@ -208,7 +273,7 @@ fun Chat() {
                 onSendMessage = {
 //                    pengecekan input tidak kosong ataupun ada hal lain yang perlu dicek sebelum mengirim pesan
                     if (inputMessage.isNotEmpty()){
-                        messages.add(Triple(true, inputMessage, currentTime))
+                        messages.add(ChatMessage(true, username, inputMessage, currentTime))
                     }
                     // Tangani pengiriman pesan di sini
                     inputMessage = "" // Bersihkan input setelah pengiriman
