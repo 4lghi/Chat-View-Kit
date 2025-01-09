@@ -278,7 +278,7 @@ fun Chat() {
                                     text = dateFormatted,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
-                                        .background(MaterialTheme.colorScheme.primary) // Background pada Text saja
+                                        .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(4.dp)) // Background pada Text saja
                                         .padding(horizontal = 10.dp, vertical = 8.dp), // Padding sekitar Text
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onPrimary
