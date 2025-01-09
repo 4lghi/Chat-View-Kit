@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,7 +80,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 data class ChatMessage(
     val isSender: Boolean,
     val username: String,
@@ -88,6 +88,7 @@ data class ChatMessage(
 )
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Chat() {
     var inputMessage by remember { mutableStateOf("") }
@@ -246,36 +247,35 @@ fun Chat() {
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(messages) { message ->
-                    val timeFormatted = try {
-                        LocalDateTime.parse(message.time, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
-                            .format(DateTimeFormatter.ofPattern("HH:mm"))
-                    } catch (e: DateTimeParseException) {
-                        Log.e("ChatApp", "Parsing error for time: ${e.message}")
-                        ""
+                // Menyaring pesan berdasarkan tanggal untuk menampilkan sticky header
+                val groupedMessages: List<Pair<String, List<ChatMessage>>> = messages
+                    .groupBy {
+                        try {
+                            LocalDateTime.parse(it.time, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
+                                .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                        } catch (e: DateTimeParseException) {
+                            ""
+                        }
                     }
+                    .map { (date, messages) -> Pair(date, messages) }
 
-                    val dateFormatted = try {
-                        LocalDateTime.parse(message.time, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
-                            .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                    } catch (e: DateTimeParseException) {
-                        Log.e("ChatApp", "Parsing error for date: ${e.message}")
-                        ""
-                    }
 
-                    // Jika tanggal pesan berubah, tambahkan header tanggal baru
-                    if (dateFormatted != dateBefore) {
-                        dateBefore = dateFormatted
-
-                        Row {
+                // Loop untuk setiap tanggal yang berbeda dan tampilkan sticky header
+                groupedMessages.forEach { (date, messagesOnDate) ->
+                    stickyHeader {
+                        // Menampilkan header tanggal baru
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp, bottom = 10.dp) // Padding sekitar Row
+                        ) {
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .padding(top = 10.dp, bottom = 10.dp)
+                                    .fillMaxWidth()
                                     .wrapContentSize(Alignment.Center) // Agar Box mengikuti lebar konten
                             ) {
                                 Text(
-                                    text = dateFormatted,
+                                    text = date,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(4.dp)) // Background pada Text saja
@@ -287,16 +287,29 @@ fun Chat() {
                         }
                     }
 
+                    // Menampilkan pesan-pesan pada tanggal tersebut
+                    items(messagesOnDate) { message ->
+                        val timeFormatted = try {
+                            LocalDateTime.parse(message.time, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
+                                .format(DateTimeFormatter.ofPattern("HH:mm"))
+                        } catch (e: DateTimeParseException) {
+                            Log.e("ChatApp", "Parsing error for time: ${e.message}")
+                            ""
+                        }
 
-                    // Tampilkan pesan sesuai dengan siapa yang mengirim
-                    if (message.isSender) {
-                        SenderMessage(text = message.text, time = timeFormatted)
-                    } else {
-                        ReceiverMessage(text = message.text, time = timeFormatted)
+                        if (message.isSender) {
+                            SenderMessage(text = message.text, time = timeFormatted)
+                        } else {
+                            ReceiverMessage(text = message.text, time = timeFormatted)
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
+
+
+
 
 //           CHAT INPUT FIELD
             ChatInputField(
