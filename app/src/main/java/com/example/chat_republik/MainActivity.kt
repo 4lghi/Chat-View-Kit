@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,7 +93,7 @@ data class ChatMessage(
 @Composable
 fun Chat() {
     var inputMessage by remember { mutableStateOf("") }
-//    val messages = remember {mutableStateListOf<ChatMessage>()}
+//    val messages = remember { mutableStateListOf<ChatMessage>() }
     val messages = remember {
         mutableStateListOf(
             ChatMessage(
@@ -163,27 +164,28 @@ fun Chat() {
             )
         )
     }
+    val listState = rememberLazyListState()
 
     val currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
-    var dateBefore by remember { mutableStateOf("") }
 
     var isMessageReceived by remember { mutableStateOf(false) }
 
-//    username user
+    // Username user
     val username = "user"
-//    username sender
+    // Username sender
     val senderUsername = "user"
 
-
-    //    Load chat history dari server atau database
-    LaunchedEffect(Unit) {
-
-    }
-
-//        jika ada pesan masuk
+    // Jika ada pesan masuk
     if (isMessageReceived) {
         messages.add(ChatMessage(false, senderUsername, "Halooo", currentTime))
         isMessageReceived = false
+    }
+
+    // Scroll ke item terakhir saat pertama kali dirender
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
     }
 
     Column(
@@ -192,7 +194,7 @@ fun Chat() {
             .background(MaterialTheme.colorScheme.surface)
             .padding(10.dp)
     ) {
-//        Header
+        // Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -220,14 +222,14 @@ fun Chat() {
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
-            Box(Modifier.fillMaxWidth()){
+            Box(Modifier.fillMaxWidth()) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back Icon",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .clickable {  }
+                        .clickable { }
                 )
             }
         }
@@ -242,9 +244,10 @@ fun Chat() {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-        ){
-//        ISI CHAT
+        ) {
+            // LazyColumn dengan kontrol scroll
             LazyColumn(
+                state = listState, // Tambahkan listState untuk kontrol scroll
                 modifier = Modifier.weight(1f)
             ) {
                 // Menyaring pesan berdasarkan tanggal untuk menampilkan sticky header
@@ -259,7 +262,6 @@ fun Chat() {
                     }
                     .map { (date, messages) -> Pair(date, messages) }
 
-
                 // Loop untuk setiap tanggal yang berbeda dan tampilkan sticky header
                 groupedMessages.forEach { (date, messagesOnDate) ->
                     stickyHeader {
@@ -267,19 +269,22 @@ fun Chat() {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 10.dp, bottom = 10.dp) // Padding sekitar Row
+                                .padding(top = 10.dp, bottom = 10.dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .wrapContentSize(Alignment.Center) // Agar Box mengikuti lebar konten
+                                    .wrapContentSize(Alignment.Center)
                             ) {
                                 Text(
                                     text = date,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
-                                        .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(4.dp)) // Background pada Text saja
-                                        .padding(horizontal = 10.dp, vertical = 8.dp), // Padding sekitar Text
+                                        .background(
+                                            MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
@@ -308,25 +313,21 @@ fun Chat() {
                 }
             }
 
-
-
-
-//           CHAT INPUT FIELD
+            // Chat Input Field
             ChatInputField(
                 inputMessage = inputMessage,
                 onMessageChange = { inputMessage = it },
                 onSendMessage = {
-//                    pengecekan input tidak kosong ataupun ada hal lain yang perlu dicek sebelum mengirim pesan
-                    if (inputMessage.isNotEmpty()){
+                    if (inputMessage.isNotEmpty()) {
                         messages.add(ChatMessage(true, username, inputMessage, currentTime))
                     }
-                    // Tangani pengiriman pesan di sini
                     inputMessage = "" // Bersihkan input setelah pengiriman
                 }
             )
         }
     }
 }
+
 
 @Composable
 fun SenderMessage(
